@@ -1,0 +1,235 @@
+{# templates/page/tickets.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block body %}
+<div class="min-h-screen bg-gradient-to-b from-indigo-50 to-white -mt-6 -mx-6 px-6 pt-6 pb-10">
+  <div class="max-w-[1440px] mx-auto">
+    <header class="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
+      <h1 class="text-3xl font-bold text-gray-800">Your Tickets</h1>
+      <button id="open-create-modal-btn" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition whitespace-nowrap">
+        + Create Ticket
+      </button>
+    </header>
+
+    <div id="ticket-list-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      </div>
+  </div>
+</div>
+
+<div id="ticket-modal" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4 hidden">
+  <div class="bg-white p-6 rounded-xl max-w-md w-full relative">
+    <button id="close-modal-btn" class="absolute top-3 right-3 text-gray-500 hover:text-gray-700">
+        <i data-lucide="x" class="w-5 h-5"></i>
+    </button>
+    <h2 id="modal-title" class="text-xl font-semibold mb-4">Create Ticket</h2>
+    <form id="ticket-form" class="space-y-4">
+      <input type="hidden" name="id" value="" />
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
+        <input name="title" type="text" class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" required />
+        <p id="error-title" class="text-red-500 text-sm mt-1 hidden"></p>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+        <textarea name="description" rows="3" class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+        <select name="status" class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white" required>
+          <option value="" disabled>Select status</option>
+          <option value="open">Open</option>
+          <option value="in_progress">In Progress</option>
+          <option value="closed">Closed</option>
+        </select>
+        <p id="error-status" class="text-red-500 text-sm mt-1 hidden"></p>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button id="cancel-modal-btn" type="button" class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 transition">Cancel</button>
+        <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition">Create</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{# templates/page/tickets.html.twig #}
+...
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script type="module">
+        import { getUserSession } from '{{ asset('js/auth.js') }}';
+        import { showToast } from '{{ asset('js/toast.js') }}';
+        import { getTickets, createTicket, updateTicket, deleteTicket } from '{{ asset('js/tickets.js') }}';
+
+        // --- Protected Route ---
+        const user = getUserSession();
+        if (!user) {
+            showToast("❌ You must log in to access this page", "error");
+            window.location.href = '{{ path('app_login') }}';
+        }
+
+        // --- Element Refs ---
+        const ticketListContainer = document.getElementById('ticket-list-container');
+        const openCreateModalBtn = document.getElementById('open-create-modal-btn');
+        const modal = document.getElementById('ticket-modal');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const cancelModalBtn = document.getElementById('cancel-modal-btn');
+        const ticketForm = document.getElementById('ticket-form');
+        const modalTitle = document.getElementById('modal-title');
+        const modalSubmitBtn = ticketForm.querySelector('button[type="submit"]');
+
+        let isEditing = false;
+
+        // --- Helper Functions ---
+        function formatStatus(status) {
+            if (!status) return '-';
+            return status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+        }
+        function getStatusClass(status) {
+            switch (status) {
+                case 'open': return 'text-green-600';
+                case 'in_progress': return 'text-amber-500';
+                case 'closed': return 'text-gray-500';
+                default: return 'text-gray-700';
+            }
+        }
+
+        // --- Render Function ---
+        function renderTickets() {
+            const tickets = getTickets();
+            ticketListContainer.innerHTML = ''; // Clear list
+
+            if (tickets.length === 0) {
+                ticketListContainer.innerHTML = '<p class="text-center text-gray-500 mt-10 col-span-full">No tickets yet. Create one to get started!</p>';
+                return;
+            }
+
+            tickets.forEach(ticket => {
+                const ticketCard = document.createElement('div');
+                ticketCard.className = 'bg-white p-6 rounded-xl shadow hover:shadow-lg transition relative flex flex-col justify-between';
+                ticketCard.innerHTML = `
+                    <div>
+                        <h2 class="font-semibold text-lg text-gray-800 break-words">${escapeHTML(ticket.title)}</h2>
+                        <p class="text-gray-600 mt-2 break-words">${escapeHTML(ticket.description) || 'No description'}</p>
+                        <p class="text-sm mt-2">
+                        Status: 
+                        <span class="font-medium ${getStatusClass(ticket.status)}">
+                            ${formatStatus(ticket.status)}
+                        </span>
+                        </p>
+                    </div>
+                    <div class="flex gap-2 mt-4 pt-4 border-t border-gray-100">
+                        <button data-id="${ticket.id}" class="btn-edit px-2 py-1 bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 transition text-sm">Edit</button>
+                        <button data-id="${ticket.id}" class="btn-delete px-2 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition text-sm">Delete</button>
+                    </div>
+                `;
+                // Add event listeners for edit/delete
+                ticketCard.querySelector('.btn-edit').addEventListener('click', () => openEditModal(ticket));
+                ticketCard.querySelector('.btn-delete').addEventListener('click', () => handleDelete(ticket.id));
+
+                ticketListContainer.appendChild(ticketCard);
+            });
+        }
+
+        function escapeHTML(str) {
+            if (!str) return '';
+            return str.replace(/[&<>"']/g, function(m) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+            });
+        }
+
+        // --- Modal/Form Logic ---
+        function openModal() { modal.classList.remove('hidden'); }
+        function closeModal() { modal.classList.add('hidden'); }
+
+        function resetForm() {
+            ticketForm.reset();
+            ticketForm.id.value = '';
+            document.getElementById('error-title').classList.add('hidden');
+            document.getElementById('error-status').classList.add('hidden');
+        }
+
+        function openCreateModal() {
+            isEditing = false;
+            resetForm();
+            modalTitle.textContent = 'Create Ticket';
+            modalSubmitBtn.textContent = 'Create';
+            ticketForm.status.value = ""; // Set default for select
+            openModal();
+        }
+
+        function openEditModal(ticket) {
+            isEditing = true;
+            resetForm();
+            modalTitle.textContent = 'Edit Ticket';
+            modalSubmitBtn.textContent = 'Update';
+
+            // Populate form
+            ticketForm.id.value = ticket.id;
+            ticketForm.title.value = ticket.title;
+            ticketForm.description.value = ticket.description;
+            ticketForm.status.value = ticket.status;
+
+            openModal();
+        }
+
+        function validateForm() {
+             let valid = true;
+             const titleError = document.getElementById('error-title');
+             const statusError = document.getElementById('error-status');
+             titleError.classList.add('hidden');
+             statusError.classList.add('hidden');
+
+             if (!ticketForm.title.value.trim()) {
+                titleError.textContent = "Title is required";
+                titleError.classList.remove('hidden');
+                valid = false;
+             }
+             if (!ticketForm.status.value) {
+                statusError.textContent = "Status is required";
+                statusError.classList.remove('hidden');
+                valid = false;
+             }
+             return valid;
+        }
+
+        function handleSaveTicket(e) {
+            e.preventDefault();
+            if (!validateForm()) return;
+
+            const ticketData = {
+                id: isEditing ? parseInt(ticketForm.id.value) : null,
+                title: ticketForm.title.value,
+                description: ticketForm.description.value,
+                status: ticketForm.status.value,
+            };
+
+            if (isEditing) {
+                updateTicket(ticketData);
+                showToast('✅ Ticket updated successfully!', 'success');
+            } else {
+                createTicket(ticketData);
+                showToast('✅ Ticket created successfully!', 'success');
+            }
+            closeModal();
+            renderTickets();
+        }
+
+        function handleDelete(id) {
+            if (window.confirm('Are you sure you want to delete this ticket?')) {
+                deleteTicket(id);
+                showToast('✅ Ticket deleted successfully!', 'success');
+                renderTickets();
+            }
+        }
+
+        // --- Initial Setup ---
+        openCreateModalBtn.addEventListener('click', openCreateModal);
+        closeModalBtn.addEventListener('click', closeModal);
+        cancelModalBtn.addEventListener('click', closeModal);
+        ticketForm.addEventListener('submit', handleSaveTicket);
+
+        renderTickets(); // Initial render
+    </script>
+{% endblock %}

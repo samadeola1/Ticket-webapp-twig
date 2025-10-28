@@ -1,0 +1,10 @@
+# config/packages/tailwind_css.yaml
+tailwind_css:
+    # The path to your input CSS file
+    input_css: '%kernel.project_dir%/assets/styles/app.css'
+    
+    # The path to your output CSS file
+    output_css: '%kernel.project_dir%/assets/styles/app.tailwind.css'
+    
+    # The path to your tailwind.config.js
+    config_file: '%kernel.project_dir%/tailwind.config.js'

@@ -1,0 +1,107 @@
+{# templates/page/signup.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block body %}
+<div class="min-h-screen flex flex-col justify-center items-center -mt-20 px-6">
+  <div class="w-full max-w-md bg-white shadow-lg rounded-xl p-8">
+    <h2 class="text-2xl font-bold text-gray-800 text-center mb-6">Create Your Account</h2>
+    <form id="signup-form" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+        <input name="name" type="text" class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Enter your full name" required />
+        <p id="error-name" class="text-red-500 text-sm mt-1 hidden"></p>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+        <input name="email" type="email" class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Enter your email" required />
+        <p id="error-email" class="text-red-500 text-sm mt-1 hidden"></p>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+        <input name="password" type="password" class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Create a password (min. 8 characters)" required />
+        <p id="error-password" class="text-red-500 text-sm mt-1 hidden"></p>
+      </div>
+      <button type="submit" class="w-full py-3 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition font-semibold">
+        Sign Up
+      </button>
+    </form>
+    <p class="text-center text-sm text-gray-600 mt-4">
+      Already have an account?
+      <a href="{{ path('app_login') }}" class="text-indigo-600 font-medium hover:underline">Login</a>
+    </p>
+  </div>
+</div>
+{% endblock %}
+{# templates/page/signup.html.twig #}
+...
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script type="module">
+        import { getUserSession, signup } from '{{ asset('js/auth.js') }}';
+        import { showToast } from '{{ asset('js/toast.js') }}';
+
+        // Redirect if already logged in
+        if (getUserSession()) {
+            window.location.href = '{{ path('app_dashboard') }}';
+        }
+
+        const signupForm = document.getElementById('signup-form');
+        const nameError = document.getElementById('error-name');
+        const emailError = document.getElementById('error-email');
+        const passwordError = document.getElementById('error-password');
+
+        signupForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            nameError.classList.add('hidden');
+            emailError.classList.add('hidden');
+            passwordError.classList.add('hidden');
+
+            const name = signupForm.name.value;
+            const email = signupForm.email.value;
+            const password = signupForm.password.value;
+            let valid = true;
+
+            if (!name) {
+                nameError.textContent = 'Name is required';
+                nameError.classList.remove('hidden');
+                valid = false;
+            }
+            if (!email) {
+                emailError.textContent = 'Email is required';
+                emailError.classList.remove('hidden');
+                valid = false;
+            } else if (!/\S+@\S+\.\S+/.test(email)) {
+                emailError.textContent = 'Email address is invalid';
+                emailError.classList.remove('hidden');
+                valid = false;
+            }
+            if (!password) {
+                passwordError.textContent = 'Password is required';
+                passwordError.classList.remove('hidden');
+                valid = false;
+            } else if (password.length < 8) {
+                passwordError.textContent = 'Password must be at least 8 characters';
+                passwordError.classList.remove('hidden');
+                valid = false;
+            }
+
+            if (!valid) return;
+
+            const result = signup(name, email, password);
+
+            if (result.success) {
+                showToast('✅ Account created successfully!', 'success');
+                window.location.href = '{{ path('app_dashboard') }}';
+            } else {
+                if (result.error === "Email already exists") {
+                    emailError.textContent = result.error;
+                    emailError.classList.remove('hidden');
+                } else {
+                    showToast(result.error || 'Signup failed. Please try again.', 'error');
+                }
+            }
+        });
+    </script>
+{% endblock %}

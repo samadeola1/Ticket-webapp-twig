@@ -1,0 +1,37 @@
+{
+    "devDependencies": {
+        "@babel/core": "^7.17.0",
+        "@babel/preset-env": "^7.16.0",
+        "@symfony/webpack-encore": "^5.0.0",
+        "autoprefixer": "^10.4.21",
+        "core-js": "^3.38.0",
+        "postcss": "^8.5.6",
+        "postcss-loader": "^8.2.0",
+        "regenerator-runtime": "^0.13.9",
+        "tailwindcss": "^4.1.16",
+        "tailwindcss-animate": "^1.0.7",
+        "webpack": "^5.74.0",
+        "webpack-cli": "^5.1.0",
+        "webpack-notifier": "^1.15.0"
+    },
+    "license": "UNLICENSED",
+    "private": true,
+    "scripts": {
+        "dev-server": "encore dev-server",
+        "dev": "encore dev",
+        "watch:css": "./node_modules/.bin/tailwindcss -c ./tailwind.config.js -i ./assets/styles/app.css -o ./assets/styles/app.tailwind.css --watch",
+        "build": "encore production --progress"
+    },
+    "dependencies": {
+        "@tailwindcss/postcss": "^4.1.16"
+    },
+    "name": "ticket-webapp-twig",
+    "version": "1.0.0",
+    "main": "postcss.config.js",
+    "directories": {
+        "test": "tests"
+    },
+    "keywords": [],
+    "author": "",
+    "description": ""
+}

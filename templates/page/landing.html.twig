@@ -1,0 +1,76 @@
+{# templates/page/landing.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block body %}
+<div class="overflow-x-hidden bg-gradient-to-b from-indigo-50 via-white to-indigo-100 -mt-6 -mx-6">
+    <section class="relative flex flex-col justify-center items-center text-center min-h-[90vh] px-6 pt-16 md:pt-0">
+        <div class="absolute top-20 left-10 w-32 h-32 bg-indigo-200 rounded-full blur-2xl opacity-70 animate-bounce-rotate"></div>
+        <div class="absolute bottom-20 right-12 w-24 h-24 bg-pink-200 rounded-full blur-xl opacity-60 animate-bounce-scale"></div>
+
+        <div class="max-w-5xl z-10 grid md:grid-cols-2 gap-16 items-center text-left animate-fade-in-up">
+            <div class="order-2 md:order-1 text-center md:text-left">
+                <span id="landing-subtitle" class="inline-block px-3 py-1 text-sm font-semibold text-pink-700 bg-pink-100 rounded-full mb-3 shadow-md">
+                    The Future of Ticketing
+                </span>
+                <h1 class="text-5xl lg:text-6xl font-extrabold text-gray-900 leading-snug mb-4">
+                    <span class="block">Effortless</span>
+                    <span class="block text-indigo-600">Ticket Management</span>
+                </h1>
+                <p class="text-gray-600 text-lg mb-8 max-w-lg mx-auto md:mx-0">
+                    Streamline event organization and customer support seamlessly.
+                </p>
+                <a id="landing-cta-btn" href="{{ path('app_login') }}" class="inline-flex items-center px-8 py-3 bg-indigo-600 text-white rounded-lg shadow-xl hover:bg-indigo-700 hover:scale-[1.02] transition transform duration-300 ease-in-out font-bold text-center group">
+                    Get Started
+                    <i data-lucide="arrow-right" class="w-5 h-5 ml-2 inline-block transition-transform duration-300 group-hover:translate-x-1"></i>
+                </a>
+            </div>
+            <div class="hidden md:flex md:order-2 relative items-center justify-center min-h-[300px] w-full p-4">
+                <div class="absolute w-6 h-6 bg-indigo-200 rounded-full opacity-60 animate-bubble-1 z-0 top-[10%] left-[15%]"></div>
+                <div class="absolute w-4 h-4 bg-pink-200 rounded-full opacity-70 animate-bubble-2 z-0 top-[70%] right-[10%]"></div>
+                <div class="absolute w-8 h-8 bg-blue-200 rounded-full opacity-50 animate-bubble-3 z-0 bottom-[5%] left-[40%]"></div>
+                <div class="relative w-48 h-48 flex items-center justify-center animate-wiggle-float z-10">
+                    {# ... SVG illustration code from Landing.tsx ... #}
+                    <svg width="100%" height="100%" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                        <linearGradient id="ticketGradient" x1="0" y1="0" y2="1">
+                            <stop offset="0%" stopColor="#818CF8"/>
+                            <stop offset="100%" stopColor="#F472B6"/>
+                        </linearGradient>
+                        </defs>
+                        <circle cx="100" cy="110" r="50" fill="#E0F2FE"/>
+                        <circle cx="100" cy="50" r="30" fill="#FFE0B2"/>
+                        <circle cx="90" cy="45" r="3" fill="#333"/>
+                        <circle cx="110" cy="45" r="3" fill="#333"/>
+                        <path d="M90 60 Q100 65 110 60" stroke="#333" strokeWidth="2" fill="none"/>
+                        <path d="M70 110 L50 130" stroke="#FFE0B2" strokeWidth="10" strokeLinecap="round"/>
+                        <path d="M130 110 L150 130" stroke="#FFE0B2" strokeWidth="10" strokeLinecap="round"/>
+                        <rect x="115" y="100" width="50" height="30" rx="5" fill="url(#ticketGradient)"/>
+                        <text x="125" y="120" fontFamily="Arial" fontSize="10" fill="white">Ticket</text>
+                    </svg>
+                </div>
+            </div>
+        </div>
+        <svg class="absolute bottom-0 left-0 w-full" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320">
+            <path fill="#6366f1" fillOpacity="0.25" d="M0,160L48,165.3C96,171,192,181,288,197.3C384,213,480,235,576,218.7C672,203,768,149,864,144C960,139,1056,181,1152,186.7C1248,192,1344,160,1392,144L1440,128V320H0Z"></path>
+        </svg>
+    </section>
+
+    <section id="features" class="max-w-[1440px] mx-auto py-20 px-6 grid gap-10 md:grid-cols-3">
+        <div class="feature-card p-8 rounded-2xl shadow-md bg-white opacity-0 transform translate-y-6 transition-all duration-700 ease-out hover:shadow-xl hover:-translate-y-2 cursor-default">
+            <div class="text-indigo-600 mb-4"><i data-lucide="check-circle" class="w-10 h-10"></i></div>
+            <h3 class="font-semibold text-lg mb-2">Fast Ticket Creation</h3>
+            <p class="text-gray-600">Create tickets in seconds with intuitive UI.</p>
+        </div>
+        <div class="feature-card p-8 rounded-2xl shadow-md bg-white opacity-0 transform translate-y-6 transition-all duration-700 ease-out hover:shadow-xl hover:-translate-y-2 cursor-default">
+            <div class="text-indigo-600 mb-4"><i data-lucide="clock" class="w-10 h-10"></i></div>
+            <h3 class="font-semibold text-lg mb-2">Real-Time Tracking</h3>
+            <p class="text-gray-600">Monitor progress with live updates and notifications.</p>
+        </div>
+        <div class="feature-card p-8 rounded-2xl shadow-md bg-white opacity-0 transform translate-y-6 transition-all duration-700 ease-out hover:shadow-xl hover:-translate-y-2 cursor-default">
+            <div class="text-indigo-600 mb-4"><i data-lucide="shield-check" class="w-10 h-10"></i></div>
+            <h3 class="font-semibold text-lg mb-2">Secure Platform</h3>
+            <p class="text-gray-600">Your data is encrypted and fully protected.</p>
+        </div>
+    </section>
+</div>
+{% endblock %}

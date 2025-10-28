@@ -1,0 +1,70 @@
+{# templates/page/dashboard.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block body %}
+<div class="min-h-screen bg-gradient-to-b from-indigo-50 to-white -mt-6 -mx-6 px-6 pt-6 pb-10">
+  <div class="max-w-[1440px] mx-auto">
+    <header class="text-center mb-10">
+      <h1 class="text-3xl sm:text-4xl font-bold text-gray-800 mb-2">
+        Welcome Back, <span id="dashboard-user-name" class="text-indigo-600">User</span> 👋
+      </h1>
+      <p class="text-gray-600">Here’s an overview of your ticket activity.</p>
+    </header>
+
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+      <div class="bg-white shadow-md rounded-xl p-6 text-center hover:shadow-lg transition hover:-translate-y-1">
+        <div class="text-4xl mb-2 inline-block text-indigo-500"><i data-lucide="clipboard-list" class="w-9 h-9" stroke-width="1.5"></i></div>
+        <h3 class="text-lg font-semibold text-gray-800">Total Tickets</h3>
+        <p id="stat-total" class="text-2xl font-bold text-gray-900 mt-2">0</p>
+      </div>
+      <div class="bg-white shadow-md rounded-xl p-6 text-center hover:shadow-lg transition hover:-translate-y-1">
+        <div class="text-4xl mb-2 inline-block text-green-500"><i data-lucide="clock" class="w-9 h-9" stroke-width="1.5"></i></div>
+        <h3 class="text-lg font-semibold text-gray-800">Open Tickets</h3>
+        <p id="stat-open" class="text-2xl font-bold text-gray-900 mt-2">0</p>
+      </div>
+      <div class="bg-white shadow-md rounded-xl p-6 text-center hover:shadow-lg transition hover:-translate-y-1">
+        <div class="text-4xl mb-2 inline-block text-amber-500"><i data-lucide="archive" class="w-9 h-9" stroke-width="1.5"></i></div>
+        <h3 class="text-lg font-semibold text-gray-800">In Progress</h3>
+        <p id="stat-progress" class="text-2xl font-bold text-gray-900 mt-2">0</p>
+      </div>
+      <div class="bg-white shadow-md rounded-xl p-6 text-center hover:shadow-lg transition hover:-translate-y-1">
+        <div class="text-4xl mb-2 inline-block text-gray-500"><i data-lucide="check-circle" class="w-9 h-9" stroke-width="1.5"></i></div>
+        <h3 class="text-lg font-semibold text-gray-800">Closed Tickets</h3>
+        <p id="stat-closed" class="text-2xl font-bold text-gray-900 mt-2">0</p>
+      </div>
+    </section>
+
+    <section class="bg-white shadow-lg rounded-2xl p-8 flex flex-col lg:flex-row items-center justify-between gap-6">
+      <div>
+        <h2 class="text-2xl font-semibold text-gray-800 mb-2">Manage Your Tickets</h2>
+        <p class="text-gray-600 max-w-md">
+          Create, edit, and track tickets seamlessly. Stay organized and on top of your workflow.
+        </p>
+      </div>
+      <a href="{{ path('app_tickets') }}" class="px-6 py-3 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700 transition text-lg font-semibold">
+        Go to Tickets
+      </a>
+    </section>
+  </div>
+</div>
+{% endblock %}
+{# templates/page/dashboard.html.twig #}
+...
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script type"module">
+        import { getUserSession } from '{{ asset('js/auth.js') }}';
+        import { showToast } from '{{ asset('js/toast.js') }}';
+
+        // This is the "ProtectedRoute" logic
+        if (!getUserSession()) {
+            showToast("❌ You must log in to access this page", "error");
+            // Save the current location to redirect back
+            // Note: The original did this, but since we're not using react-router state,
+            // we'll just send them to login.
+            window.location.href = '{{ path('app_login') }}';
+        }
+    </script>
+{% endblock %}
