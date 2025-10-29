@@ -7,18 +7,18 @@
     <h2 class="text-2xl font-bold text-gray-800 text-center mb-6">Create Your Account</h2>
     <form id="signup-form" class="space-y-4">
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-        <input name="name" type="text" class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Enter your full name" required />
+        <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+        <input name="name" id="name" type="text" class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Enter your full name" required />
         <p id="error-name" class="text-red-500 text-sm mt-1 hidden"></p>
       </div>
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-        <input name="email" type="email" class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Enter your email" required />
+        <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+        <input name="email" id="email" type="email" class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Enter your email" required />
         <p id="error-email" class="text-red-500 text-sm mt-1 hidden"></p>
       </div>
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-        <input name="password" type="password" class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Create a password (min. 8 characters)" required />
+        <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+        <input name="password" id="password" type="password" class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Create a password (min. 8 characters)" required />
         <p id="error-password" class="text-red-500 text-sm mt-1 hidden"></p>
       </div>
       <button type="submit" class="w-full py-3 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition font-semibold">
@@ -32,21 +32,17 @@
   </div>
 </div>
 {% endblock %}
-{# templates/page/signup.html.twig #}
-...
-{% endblock %}
 
 {% block javascripts %}
     {{ parent() }}
     <script type="module">
-        import { getUserSession, signup } from '{{ asset('js/auth.js') }}';
-        import { showToast } from '{{ asset('js/toast.js') }}';
+        import { getUserSession, signup } from '{{ asset('build/app.js')|replace({'build/': ''})|split('?')[0] }}'.replace('app.js', 'js/auth.js');
+        import { showToast } from '{{ asset('build/app.js')|replace({'build/': ''})|split('?')[0] }}'.replace('app.js', 'js/toast.js');
 
-        // Redirect if already logged in
         if (getUserSession()) {
             window.location.href = '{{ path('app_dashboard') }}';
         }
-
+        
         const signupForm = document.getElementById('signup-form');
         const nameError = document.getElementById('error-name');
         const emailError = document.getElementById('error-email');
@@ -86,7 +82,7 @@
                 passwordError.classList.remove('hidden');
                 valid = false;
             }
-
+            
             if (!valid) return;
 
             const result = signup(name, email, password);

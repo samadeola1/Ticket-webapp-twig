@@ -48,22 +48,17 @@
   </div>
 </div>
 {% endblock %}
-{# templates/page/dashboard.html.twig #}
-...
-{% endblock %}
+
 
 {% block javascripts %}
     {{ parent() }}
-    <script type"module">
-        import { getUserSession } from '{{ asset('js/auth.js') }}';
-        import { showToast } from '{{ asset('js/toast.js') }}';
+    <script type="module">
+        import { getUserSession } from '{{ asset('build/app.js')|replace({'build/': ''})|split('?')[0] }}'.replace('app.js', 'js/auth.js');
+        import { showToast } from '{{ asset('build/app.js')|replace({'build/': ''})|split('?')[0] }}'.replace('app.js', 'js/toast.js');
 
         // This is the "ProtectedRoute" logic
         if (!getUserSession()) {
             showToast("❌ You must log in to access this page", "error");
-            // Save the current location to redirect back
-            // Note: The original did this, but since we're not using react-router state,
-            // we'll just send them to login.
             window.location.href = '{{ path('app_login') }}';
         }
     </script>
