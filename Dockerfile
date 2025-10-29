@@ -2,7 +2,7 @@
 FROM php:8.2-apache
 
 # 1. Install system dependencies & PHP extensions
-# UPDATED: Added libxml2-dev (for 'xml' extension), and opcache (for performance)
+# UPDATED: Added all required -dev libs for your composer.lock
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
@@ -10,6 +10,8 @@ RUN apt-get update && apt-get install -y \
     libpq-dev \
     libicu-dev \
     libxml2-dev \
+    libjson-dev \
+    libonig-dev \
     && docker-php-ext-install \
     pdo_pgsql \
     pgsql \
@@ -18,6 +20,11 @@ RUN apt-get update && apt-get install -y \
     xml \
     ctype \
     iconv \
+    dom \
+    json \
+    tokenizer \
+    xmlwriter \
+    mbstring \
     opcache \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
@@ -42,12 +49,11 @@ WORKDIR /var/www/html
 COPY . .
 
 # 7. Install PHP & Node dependencies
-# UPDATED: We set dummy env vars for the build, so composer's auto-scripts (like cache:clear) don't fail.
-# The real secrets will be injected at runtime by Render.
+# UPDATED: Added COMPOSER_MEMORY_LIMIT=-1
 RUN export APP_ENV=prod && \
     export APP_SECRET=buildsecret_dummy && \
-    export DATABASE_URL=dummy://db \
-    && composer install --no-dev --optimize-autoloader
+    export DATABASE_URL=dummy://db && \
+    COMPOSER_MEMORY_LIMIT=-1 composer install --no-dev --optimize-autoloader
 
 # 8. Build your assets for production
 RUN npm install
@@ -57,7 +63,6 @@ RUN npm run build
 RUN chown -R www-data:www-data var public/build
 
 # 10. Warm up the cache again AFTER assets are built
-# This ensures the manifest.json from Webpack is found.
 RUN export APP_ENV=prod && \
     export APP_SECRET=buildsecret_dummy && \
     export DATABASE_URL=dummy://db \
