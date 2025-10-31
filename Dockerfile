@@ -1,9 +1,7 @@
 # Use an official PHP 8.2 image with Apache
 FROM php:8.2-apache
 
-# 1. Install system dependencies & PHP extensions
-# UPDATED: Added all required -dev libs for your composer.lock
-# 1. Install system dependencies & PHP extensions
+# 1. Install system dependencies & PHP extensions (CORRECTED)
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
@@ -17,14 +15,7 @@ RUN apt-get update && apt-get install -y \
     pgsql \
     intl \
     zip \
-    xml \
-    ctype \
-    iconv \
-    dom \
-    tokenizer \
-    xmlwriter \
-    mbstring \
-    opcache \
+    && docker-php-ext-enable opcache \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -48,7 +39,6 @@ WORKDIR /var/www/html
 COPY . .
 
 # 7. Install PHP & Node dependencies
-# UPDATED: Added COMPOSER_MEMORY_LIMIT=-1
 RUN export APP_ENV=prod && \
     export APP_SECRET=buildsecret_dummy && \
     export DATABASE_URL=dummy://db && \
