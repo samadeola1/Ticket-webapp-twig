@@ -32,33 +32,35 @@ RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-av
 RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 RUN a2enmod rewrite
 
-# 5. Set working directory and copy app files
+# 5. Set working directory
 WORKDIR /var/www/html
-COPY . .
 
 # 6. Create directories needed by Symfony
-#    (var/npm_cache is no longer needed)
 RUN mkdir -p var/cache var/log public/build
 
-# 7. *** THIS IS THE FIX ***
-#    Change ownership of ALL files to www-data
+# 7. Copy all application files
+COPY . .
+
+# 8. *** THIS IS THE KEY FIX ***
+#    Change ownership of ALL files to www-data BEFORE switching user
 RUN chown -R www-data:www-data .
 
-# 8. Switch to the web server user
+# 9. Switch to the web server user
 USER www-data
 
-# 9. Install dependencies as the www-data user
+# 10. Install dependencies as the www-data user
+#     (This user now owns all files)
 RUN export APP_ENV=prod && \
     export APP_SECRET=buildsecret_dummy && \
     export DATABASE_URL=dummy://db && \
     COMPOSER_MEMORY_LIMIT=-1 composer install --no-dev --optimize-autoloader --ignore-platform-reqs --no-scripts
 
-# 10. Build assets as the www-data user
-#     (No cache flag needed, it will use /var/www/.npm which it now owns)
+# 11. Build assets as the www-data user
+#     (This user now has permission to write to package-lock.json)
 RUN npm install
 RUN npm run build
 
-# 11. Warm up the cache as the www-data user
+# 12. Warm up the cache as the www-data user
 RUN export APP_ENV=prod && \
     export APP_SECRET=buildsecret_dummy && \
     export DATABASE_URL=dummy://db \
