@@ -3,6 +3,7 @@ FROM php:8.2-apache
 
 # 1. Install system dependencies & PHP extensions
 # UPDATED: Added all required -dev libs for your composer.lock
+# 1. Install system dependencies & PHP extensions
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
@@ -10,7 +11,6 @@ RUN apt-get update && apt-get install -y \
     libpq-dev \
     libicu-dev \
     libxml2-dev \
-    libjson-dev \
     libonig-dev \
     && docker-php-ext-install \
     pdo_pgsql \
@@ -21,7 +21,6 @@ RUN apt-get update && apt-get install -y \
     ctype \
     iconv \
     dom \
-    json \
     tokenizer \
     xmlwriter \
     mbstring \
