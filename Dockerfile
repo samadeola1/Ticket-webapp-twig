@@ -36,26 +36,29 @@ RUN a2enmod rewrite
 WORKDIR /var/www/html
 COPY . .
 
-# 6. Create directories and set permissions BEFORE installing
-#    UPDATED: Added var/npm_cache for npm
-RUN mkdir -p var/cache var/log public/build var/npm_cache \
-    && chown -R www-data:www-data var public/build
+# 6. Create directories needed by Symfony
+#    (var/npm_cache is no longer needed)
+RUN mkdir -p var/cache var/log public/build
 
-# 7. Switch to the web server user
+# 7. *** THIS IS THE FIX ***
+#    Change ownership of ALL files to www-data
+RUN chown -R www-data:www-data .
+
+# 8. Switch to the web server user
 USER www-data
 
-# 8. Install dependencies as the www-data user
+# 9. Install dependencies as the www-data user
 RUN export APP_ENV=prod && \
     export APP_SECRET=buildsecret_dummy && \
     export DATABASE_URL=dummy://db && \
     COMPOSER_MEMORY_LIMIT=-1 composer install --no-dev --optimize-autoloader --ignore-platform-reqs --no-scripts
 
-# 9. Build assets as the www-data user
-#    UPDATED: Added --cache flag to use our writable directory
-RUN npm install --cache var/npm_cache
+# 10. Build assets as the www-data user
+#     (No cache flag needed, it will use /var/www/.npm which it now owns)
+RUN npm install
 RUN npm run build
 
-# 10. Warm up the cache as the www-data user
+# 11. Warm up the cache as the www-data user
 RUN export APP_ENV=prod && \
     export APP_SECRET=buildsecret_dummy && \
     export DATABASE_URL=dummy://db \
