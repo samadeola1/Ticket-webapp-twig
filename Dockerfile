@@ -38,11 +38,11 @@ RUN a2enmod rewrite
 WORKDIR /var/www/html
 COPY . .
 
-# 7. Install PHP & Node dependencies
+# 7. Install PHP & Node dependencies (CORRECTED WITH --ignore-platform-reqs)
 RUN export APP_ENV=prod && \
     export APP_SECRET=buildsecret_dummy && \
     export DATABASE_URL=dummy://db && \
-    COMPOSER_MEMORY_LIMIT=-1 composer install --no-dev --optimize-autoloader
+    COMPOSER_MEMORY_LIMIT=-1 composer install --no-dev --optimize-autoloader --ignore-platform-reqs
 
 # 8. Build your assets for production
 RUN npm install
