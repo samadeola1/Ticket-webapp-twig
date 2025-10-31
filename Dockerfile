@@ -36,21 +36,23 @@ RUN a2enmod rewrite
 WORKDIR /var/www/html
 COPY . .
 
-# 6. Set correct permissions for the entire directory
-RUN chown -R www-data:www-data .
+# 6. Create directories and set permissions BEFORE installing
+#    UPDATED: Added var/npm_cache for npm
+RUN mkdir -p var/cache var/log public/build var/npm_cache \
+    && chown -R www-data:www-data var public/build
 
 # 7. Switch to the web server user
 USER www-data
 
 # 8. Install dependencies as the www-data user
-# Environment variables are now passed directly to the commands
 RUN export APP_ENV=prod && \
     export APP_SECRET=buildsecret_dummy && \
     export DATABASE_URL=dummy://db && \
     COMPOSER_MEMORY_LIMIT=-1 composer install --no-dev --optimize-autoloader --ignore-platform-reqs --no-scripts
 
 # 9. Build assets as the www-data user
-RUN npm install
+#    UPDATED: Added --cache flag to use our writable directory
+RUN npm install --cache var/npm_cache
 RUN npm run build
 
 # 10. Warm up the cache as the www-data user
