@@ -26,34 +26,35 @@ RUN curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - \
 # 3. Install Composer (latest version)
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# 4. Set the Apache DocumentRoot to Symfony's public/ directory
+# 4. Set Apache configurations
 ENV APACHE_DOCUMENT_ROOT /var/www/html/public
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
 RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
-
-# 5. Enable Apache's mod_rewrite
 RUN a2enmod rewrite
 
-# 6. Copy your application code into the container
+# 5. Set working directory and copy app files
 WORKDIR /var/www/html
 COPY . .
 
-# 7. Create directories and set permissions BEFORE installing
-RUN mkdir -p var/cache var/log public/build \
-    && chown -R www-data:www-data var public/build
+# 6. Set correct permissions for the entire directory
+RUN chown -R www-data:www-data .
 
-# 8. Install PHP dependencies
+# 7. Switch to the web server user
+USER www-data
+
+# 8. Install dependencies as the www-data user
+# Environment variables are now passed directly to the commands
 RUN export APP_ENV=prod && \
     export APP_SECRET=buildsecret_dummy && \
     export DATABASE_URL=dummy://db && \
     COMPOSER_MEMORY_LIMIT=-1 composer install --no-dev --optimize-autoloader --ignore-platform-reqs --no-scripts
 
-# 9. Build your assets for production
+# 9. Build assets as the www-data user
 RUN npm install
 RUN npm run build
 
-# 10. Warm up the cache as the web user
+# 10. Warm up the cache as the www-data user
 RUN export APP_ENV=prod && \
     export APP_SECRET=buildsecret_dummy && \
     export DATABASE_URL=dummy://db \
-    && su -s /bin/sh www-data -c "php bin/console cache:clear"
+    && php bin/console cache:clear
