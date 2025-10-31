@@ -1,7 +1,7 @@
 # Use an official PHP 8.2 image with Apache
 FROM php:8.2-apache
 
-# 1. Install system dependencies & PHP extensions (CORRECTED)
+# 1. Install system dependencies & PHP extensions
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
@@ -38,21 +38,22 @@ RUN a2enmod rewrite
 WORKDIR /var/www/html
 COPY . .
 
-# 7. Install PHP & Node dependencies (CORRECTED with --ignore-platform-reqs and --no-scripts)
+# 7. Create directories and set permissions BEFORE installing
+RUN mkdir -p var/cache var/log public/build \
+    && chown -R www-data:www-data var public/build
+
+# 8. Install PHP dependencies
 RUN export APP_ENV=prod && \
     export APP_SECRET=buildsecret_dummy && \
     export DATABASE_URL=dummy://db && \
     COMPOSER_MEMORY_LIMIT=-1 composer install --no-dev --optimize-autoloader --ignore-platform-reqs --no-scripts
 
-# 8. Build your assets for production
+# 9. Build your assets for production
 RUN npm install
 RUN npm run build
 
-# 9. Set correct permissions for the web server
-RUN chown -R www-data:www-data var public/build
-
-# 10. Warm up the cache again AFTER assets are built
+# 10. Warm up the cache as the web user
 RUN export APP_ENV=prod && \
     export APP_SECRET=buildsecret_dummy && \
     export DATABASE_URL=dummy://db \
-    && php bin/console cache:clear
+    && su -s /bin/sh www-data -c "php bin/console cache:clear"
