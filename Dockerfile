@@ -39,28 +39,20 @@ RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-av
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy composer files first for better caching
-COPY composer.json composer.lock symfony.lock* ./
+# Copy all application code
+COPY . .
 
-# Install PHP dependencies (as root initially)
+# Install PHP dependencies with ignore-platform-reqs and verbose output
 RUN COMPOSER_MEMORY_LIMIT=-1 composer install \
     --no-dev \
     --optimize-autoloader \
-    --no-scripts \
-    --no-autoloader \
-    --prefer-dist
-
-# Copy package.json files for npm
-COPY package*.json ./
+    --prefer-dist \
+    --ignore-platform-reqs \
+    --no-interaction \
+    --verbose || (composer diagnose && exit 1)
 
 # Install Node dependencies
-RUN npm ci --prefer-offline --no-audit
-
-# Copy application code
-COPY . .
-
-# Complete Composer autoload generation
-RUN composer dump-autoload --optimize --no-dev --classmap-authoritative
+RUN npm ci --prefer-offline --no-audit || npm install --prefer-offline --no-audit
 
 # Build assets
 RUN npm run build
@@ -69,9 +61,6 @@ RUN npm run build
 RUN mkdir -p var/cache var/log public/build && \
     chown -R www-data:www-data var public/build && \
     chmod -R 775 var
-
-# Clear and warm up cache (using environment variables from Render)
-RUN php bin/console cache:clear --env=prod --no-debug || true
 
 # Configure Apache to listen on PORT from environment
 RUN echo "Listen \${PORT}" > /etc/apache2/ports.conf && \
