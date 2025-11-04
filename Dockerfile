@@ -1,7 +1,7 @@
 # Use an official PHP 8.2 image with Apache
 FROM php:8.2-apache
 
-# 1. Install system dependencies & PHP extensions
+# Install system dependencies & PHP extensions
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
@@ -15,59 +15,85 @@ RUN apt-get update && apt-get install -y \
     pgsql \
     intl \
     zip \
+    mbstring \
+    xml \
     && docker-php-ext-enable opcache \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# 2. Install Node.js and npm
+# Install Node.js and npm
 RUN curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - \
-    && apt-get install -y nodejs
+    && apt-get install -y nodejs \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-# 3. Install Composer (latest version)
+# Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# 4. Set Apache configurations
-ENV APACHE_DOCUMENT_ROOT /var/www/html/public
-RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
-RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
-RUN a2enmod rewrite
+# Configure Apache
+ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf && \
+    sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf && \
+    a2enmod rewrite headers
 
-# 5. Set working directory
+# Set working directory
 WORKDIR /var/www/html
 
-# 6. Copy all application files
+# Copy composer files first for better caching
+COPY composer.json composer.lock symfony.lock* ./
+
+# Install PHP dependencies (as root initially)
+RUN COMPOSER_MEMORY_LIMIT=-1 composer install \
+    --no-dev \
+    --optimize-autoloader \
+    --no-scripts \
+    --no-autoloader \
+    --prefer-dist
+
+# Copy package.json files for npm
+COPY package*.json ./
+
+# Install Node dependencies
+RUN npm ci --prefer-offline --no-audit
+
+# Copy application code
 COPY . .
 
-# 7. Create Symfony dirs (owned by root for now)
-RUN mkdir -p var/cache var/log public/build
+# Complete Composer autoload generation
+RUN composer dump-autoload --optimize --no-dev --classmap-authoritative
 
-# 8. Create a writable home directory for www-data and give it ownership
-RUN mkdir -p /home/www-data && chown -R www-data:www-data /home/www-data
-
-# 9. Change ownership of ALL app files to www-data
-RUN chown -R www-data:www-data .
-
-# 10. Switch to the web server user
-USER www-data
-
-# 11. Set the HOME environment variable for this user
-ENV HOME /home/www-data
-
-# 12. Install dependencies as the www-data user
-RUN export APP_ENV=prod && \
-    export APP_SECRET=buildsecret_dummy && \
-    export DATABASE_URL=dummy://db && \
-    COMPOSER_MEMORY_LIMIT=-1 composer install --no-dev --optimize-autoloader --ignore-platform-reqs --no-scripts
-
-# 13. Build assets as the www-data user
-#     (This will now correctly write its cache to /home/www-data/.npm)
-RUN npm install
-
-# 14. Run the build script
+# Build assets
 RUN npm run build
 
-# 15. Warm up the cache as the www-data user
-RUN export APP_ENV=prod && \
-    export APP_SECRET=buildsecret_dummy && \
-    export DATABASE_URL=dummy://db \
-    && php bin/console cache:clear
+# Create necessary directories and set permissions
+RUN mkdir -p var/cache var/log public/build && \
+    chown -R www-data:www-data var public/build && \
+    chmod -R 775 var
+
+# Clear and warm up cache (using environment variables from Render)
+RUN php bin/console cache:clear --env=prod --no-debug || true
+
+# Configure Apache to listen on PORT from environment
+RUN echo "Listen \${PORT}" > /etc/apache2/ports.conf && \
+    sed -i 's/<VirtualHost \*:80>/<VirtualHost *:${PORT}>/' /etc/apache2/sites-available/000-default.conf
+
+# Create startup script
+RUN echo '#!/bin/bash\n\
+    set -e\n\
+    \n\
+    # Run any necessary migrations\n\
+    php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration || true\n\
+    \n\
+    # Clear cache with actual environment\n\
+    php bin/console cache:clear --no-warmup || true\n\
+    php bin/console cache:warmup || true\n\
+    \n\
+    # Start Apache in foreground\n\
+    exec apache2-foreground' > /usr/local/bin/start.sh && \
+    chmod +x /usr/local/bin/start.sh
+
+# Expose port (Render will inject the PORT env var)
+EXPOSE ${PORT:-8080}
+
+# Use the startup script
+CMD ["/usr/local/bin/start.sh"]
