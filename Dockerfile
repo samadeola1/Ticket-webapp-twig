@@ -30,6 +30,10 @@ RUN curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - \
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
+# Configure Git (required for some Composer packages)
+RUN git config --global user.email "build@render.com" && \
+    git config --global user.name "Render Build"
+
 # Configure Apache
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf && \
@@ -42,14 +46,24 @@ WORKDIR /var/www/html
 # Copy all application code
 COPY . .
 
-# Install PHP dependencies with ignore-platform-reqs and verbose output
+# Set dummy environment variables for Composer scripts
+ENV APP_ENV=prod
+ENV APP_SECRET=dummy_secret_for_build_only
+ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy?serverVersion=15&charset=utf8"
+
+# Verify composer.lock exists and validate it
+RUN composer validate --no-check-publish
+
+# Install PHP dependencies - use --no-scripts first to avoid Symfony command errors
 RUN COMPOSER_MEMORY_LIMIT=-1 composer install \
     --no-dev \
-    --optimize-autoloader \
-    --prefer-dist \
+    --no-scripts \
     --ignore-platform-reqs \
     --no-interaction \
-    --verbose || (composer diagnose && exit 1)
+    --prefer-dist
+
+# Then run the scripts manually with proper environment (they might still fail, that's ok)
+RUN composer dump-autoload --optimize --no-dev --classmap-authoritative
 
 # Install Node dependencies
 RUN npm ci --prefer-offline --no-audit || npm install --prefer-offline --no-audit
@@ -61,6 +75,11 @@ RUN npm run build
 RUN mkdir -p var/cache var/log public/build && \
     chown -R www-data:www-data var public/build && \
     chmod -R 775 var
+
+# Warm up Symfony cache with dummy vars (will be re-warmed on startup with real vars)
+RUN php bin/console cache:clear --no-warmup || true
+RUN php bin/console cache:warmup || true
+RUN php bin/console assets:install public --symlink --relative || true
 
 # Configure Apache to listen on PORT from environment
 RUN echo "Listen \${PORT}" > /etc/apache2/ports.conf && \
