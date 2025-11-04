@@ -1,5 +1,5 @@
-# Use an official PHP 8.2 image with Apache
-FROM php:8.2-apache
+# Use an official PHP 8.3 image with Apache
+FROM php:8.3-apache
 
 # Install system dependencies & PHP extensions
 RUN apt-get update && apt-get install -y \
